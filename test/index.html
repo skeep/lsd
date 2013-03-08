@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>LocalStorage</title>
+</head>
+<body>
+	<script src="../mukhos.js"></script>
+	<script>
+	mukhos.createTable('books');
+	var book = {
+		// id : '4',
+		name : '.Net Book'
+	};
+	mukhos.store('books', book);
+
+	mukhos.createTable('authors');
+	var author = {
+		// id : '3',
+		name : 'shreyashi'
+	};
+	mukhos.store('authors', author);
+	// console.log(mukhos.read('authors', 30));
+	// mukhos.remove('books', 1);
+	</script>
+</body>
+</html>
