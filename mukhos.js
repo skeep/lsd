@@ -1,25 +1,47 @@
 var mukhos = (function() {
 	'use strict';
-	var query = function(prefix) {
+
+	function query(tableName, filter) {
 		var data = [];
-		for (var key in localStorage) {
-			if (key.indexOf(prefix) === 0) {
-				data.push({
-					key: parseInt(key.replace(prefix, ''), 10),
-					data: JSON.parse(localStorage[key])
-				});
-			}
+		var tables = JSON.parse(localStorage.tables);
+		var mapList = tables[tableName].map;
+		for (var key in mapList) {
+			data.push(JSON.parse(localStorage[mapList[key]]));
 		}
 		return data;
-	};
-	var remove = function(tableName, id) {
+	}
+
+	function index(tableName, field) {
+		// body...
+		var data = query(tableName);
 		var tables = JSON.parse(localStorage.tables);
-		var uid = tables[tableName].index[id];
+		var table = tables[tableName];
+		console.log(table);
+		var index = table.index || {};
+		data.forEach(function(_value, _index) {
+			if (!_index[_value[field]]) {
+				index[_value[field]] = [];
+				index[_value[field]].push(_value.id);
+			} else {
+				index[_value[field]].push(_value.id);
+			}
+			// console.log(index[value[field]]);
+		});
+		console.log(index);
+
+		tables[tableName].index = index;
+
+		localStorage.tables = JSON.stringify(tables);
+	}
+
+	function remove(tableName, id) {
+		var tables = JSON.parse(localStorage.tables);
+		var uid = tables[tableName].map[id];
 		localStorage.removeItem(uid);
 		// id = id + '';
-		delete tables[tableName].index[id];
+		delete tables[tableName].map[id];
 		localStorage.tables = JSON.stringify(tables);
-	};
+	}
 
 	function createTable(tableName) {
 
@@ -43,7 +65,7 @@ var mukhos = (function() {
 		var tables = JSON.parse(localStorage.tables);
 		if (data.hasOwnProperty('id')) {
 			var dataId = data.id;
-			id = tables[tableName].index[dataId];
+			id = tables[tableName].map[dataId];
 			var storedData = read(tableName, data.id);
 			for (var key in data) {
 				if (data.hasOwnProperty(key)) {
@@ -58,10 +80,10 @@ var mukhos = (function() {
 			id = randomUUID();
 			var needle = tables[tableName].needle;
 			data.id = needle;
-			if (typeof tables[tableName].index === 'undefined') {
-				tables[tableName].index = {};
+			if (typeof tables[tableName].map === 'undefined') {
+				tables[tableName].map = {};
 			}
-			tables[tableName].index[needle] = id;
+			tables[tableName].map[needle] = id;
 			tables[tableName].needle = needle + 1;
 			localStorage.tables = JSON.stringify(tables);
 		}
@@ -70,7 +92,7 @@ var mukhos = (function() {
 
 	function read(tableName, id) {
 		var tables = JSON.parse(localStorage.tables);
-		var uid = tables[tableName].index[id];
+		var uid = tables[tableName].map[id];
 		console.log(uid);
 		if (typeof uid !== 'undefine') {
 			return JSON.parse(localStorage[uid]);
@@ -126,7 +148,9 @@ var mukhos = (function() {
 		createTable: createTable,
 		store: store,
 		read: read,
-		remove: remove
+		remove: remove,
+		query: query,
+		index: index
 	};
 
 })();
