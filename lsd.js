@@ -1,37 +1,81 @@
-var mukhos = (function() {
+var lsd = (function() {
 	'use strict';
 
 	function query(tableName, filter) {
 		var data = [];
 		var tables = JSON.parse(localStorage.tables);
-		var mapList = tables[tableName].map;
-		for (var key in mapList) {
-			data.push(JSON.parse(localStorage[mapList[key]]));
+		if (!filter) {
+			var mapList = tables[tableName].map;
+			for (var key in mapList) {
+				data.push(JSON.parse(localStorage[mapList[key]]));
+			}
+		} else {
+			var abbreviation = filter.v;
+			var field = filter.f;
+			var list = tables[tableName].index[field].list.map(function(val) {
+				return {
+					value: val,
+					score: 0.0
+				};
+			});
+			var results = [];
+			list.forEach(function(field, index) {
+				var score = LiquidMetal.score(field.value, abbreviation);
+				field.score = score;
+				if (score > 0.5) results.push(field);
+			});
+
+			results.sort(function(a, b) {
+				return (b.score - a.score);
+			});
+
+			var idArr = [];
+			results.forEach(function(value, index) {
+				var temp = tables[tableName].index[field].map[value.value];
+				temp.forEach(function(value) {
+					idArr.push(value);
+				});
+			});
+			idArr.forEach(function(value) {
+				data.push(JSON.parse(localStorage[tables[tableName].map[value]]));
+			});
 		}
 		return data;
 	}
 
 	function index(tableName, field) {
-		// body...
-		var data = query(tableName);
 		var tables = JSON.parse(localStorage.tables);
 		var table = tables[tableName];
-		console.log(table);
-		var index = table.index || {};
-		data.forEach(function(_value, _index) {
-			if (!_index[_value[field]]) {
-				index[_value[field]] = [];
-				index[_value[field]].push(_value.id);
-			} else {
-				index[_value[field]].push(_value.id);
+		if (table.fields[field].type === 'string' || table.fields[field].type === 'number' || table.fields[field].type === 'boolean') {
+			if (table.fields[field].indexed === false) {
+				table.fields[field].indexed = true;
+				var data = query(tableName);
+				//console.log(data);
+				var index = table.index || {};
+				index[field] = {
+					list: [],
+					map: {}
+				};
+				data.forEach(function(_value, _index) {
+					if (!index[field].map[_value[field]]) {
+						index[field].list.push(_value[field]);
+						index[field].map[_value[field]] = [];
+						index[field].map[_value[field]].push(_value.id);
+					} else {
+						index[field].map[_value[field]].push(_value.id);
+					}
+				});
+				if (table.fields[field].type === 'string') {
+					index[field].list = index[field].list.sort();
+				} else if (table.fields[field].type === 'number') {
+					index[field].list = index[field].list.sort(function(a, b) {
+						return (a - b);
+					});
+				}
+				tables[tableName].index = index;
+				localStorage.tables = JSON.stringify(tables);
 			}
-			// console.log(index[value[field]]);
-		});
-		console.log(index);
-
-		tables[tableName].index = index;
-
-		localStorage.tables = JSON.stringify(tables);
+		}
 	}
 
 	function remove(tableName, id) {
@@ -55,7 +99,7 @@ var mukhos = (function() {
 			tables[tableName] = tableProp;
 			localStorage.tables = JSON.stringify(tables);
 		} else {
-			console.log('Table : "' + tableName + '" exist');
+			//console.log('Table : "' + tableName + '" exist');
 		}
 
 	}
@@ -85,6 +129,13 @@ var mukhos = (function() {
 			}
 			tables[tableName].map[needle] = id;
 			tables[tableName].needle = needle + 1;
+			tables[tableName].fields = tables[tableName].fields || {};
+			for (var objKey in data) {
+				tables[tableName].fields[objKey] = {
+					type: typeof data[objKey],
+					indexed: false
+				};
+			}
 			localStorage.tables = JSON.stringify(tables);
 		}
 		localStorage[id] = JSON.stringify(data);
@@ -93,7 +144,7 @@ var mukhos = (function() {
 	function read(tableName, id) {
 		var tables = JSON.parse(localStorage.tables);
 		var uid = tables[tableName].map[id];
-		console.log(uid);
+		//console.log(uid);
 		if (typeof uid !== 'undefine') {
 			return JSON.parse(localStorage[uid]);
 		} else {
