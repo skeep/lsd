@@ -87,72 +87,110 @@ var lsd = (function() {
 		localStorage.tables = JSON.stringify(tables);
 	}
 
-	function createTable(tableName) {
-
-		var tables = localStorage.tables || '{}';
-		tables = JSON.parse(tables);
-		if (typeof tables[tableName] === 'undefined') {
-			var tableProp = {
-				needle: 1,
-				created: new Date()
-			};
-			tables[tableName] = tableProp;
-			localStorage.tables = JSON.stringify(tables);
-		} else {
-			//console.log('Table : "' + tableName + '" exist');
-		}
-
-	}
 
 	function store(tableName, data) {
 		var id = '';
-		var tables = JSON.parse(localStorage.tables);
+		var table = getTable(tableName);
 		if (data.hasOwnProperty('id')) {
 			var dataId = data.id;
-			id = tables[tableName].map[dataId];
-			var storedData = read(tableName, data.id);
+			var storedData = read(tableName, dataId);
+			id = table.map[dataId];
 			for (var key in data) {
 				if (data.hasOwnProperty(key)) {
 					storedData[key] = data[key];
 				}
 			}
 			data = storedData;
+			//data augmentation
 			data.modified = new Date();
 		} else {
+			var needle = table.needle;
+			id = randomUUID();
+			//data augmentation
 			data.created = new Date();
 			data.modified = new Date();
-			id = randomUUID();
-			var needle = tables[tableName].needle;
 			data.id = needle;
-			if (typeof tables[tableName].map === 'undefined') {
-				tables[tableName].map = {};
-			}
-			tables[tableName].map[needle] = id;
-			tables[tableName].needle = needle + 1;
-			tables[tableName].fields = tables[tableName].fields || {};
+			//table augmentation
+			table.needle = needle + 1;
+			table.map[needle] = id;
 			for (var objKey in data) {
-				tables[tableName].fields[objKey] = {
+				table.fields[objKey] = {
 					type: typeof data[objKey],
 					indexed: false
 				};
 			}
+			var tables = getTables();
+			tables[tableName] = table;
 			localStorage.tables = JSON.stringify(tables);
 		}
-		localStorage[id] = JSON.stringify(data);
+		putData(id, data);
 	}
 
 	function read(tableName, id) {
 		var tables = JSON.parse(localStorage.tables);
 		var uid = tables[tableName].map[id];
-		//console.log(uid);
 		if (typeof uid !== 'undefine') {
 			return JSON.parse(localStorage[uid]);
 		} else {
 			console.log('data not found');
 			return false;
 		}
-
 	}
+
+	//Initialize DB
+
+	function initDB() {
+		if (!getTables()) {
+			localStorage.tables = '{}';
+			return true;
+		}
+	}
+
+	// get all tables
+
+	function getTables() {
+		if (localStorage.tables) {
+			return JSON.parse(localStorage.tables);
+		} else {
+			return false;
+		}
+	}
+
+	// get a perticular table
+
+	function getTable(name) {
+		var table = getTables()[name];
+		if (table) {
+			return table;
+		} else {
+			return false;
+		}
+	}
+
+	// Create new table
+
+	function createTable(name, schema) {
+		if (!getTable(name)) {
+			initDB();
+			var tables = getTables();
+			var tableProps = {
+				needle: 1,
+				created: new Date(),
+				map: {},
+				fields: {}
+			};
+			tables[name] = tableProps;
+			putData('tables', tables);
+			return true;
+		} else {
+			console.log('table exisit');
+		}
+	}
+
+	function putData(key, value){
+		localStorage[key] = JSON.stringify(value);
+	}
+
 	/* randomUUID.js - Version 1.0
 	 *
 	 * Copyright 2008, Robert Kieffer
