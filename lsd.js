@@ -47,7 +47,12 @@ var lsd = (function () {
 			tables[objectStore] = table;
 			localStorage.tables = JSON.stringify(tables);
 		}
-		putData(id, data);
+		var putDataInLS = putData(id, data);
+		if(putDataInLS){
+			return data;
+		} else {
+			return false;
+		}
 	}
 
 	function read(objectStore, id) {
@@ -112,20 +117,19 @@ var lsd = (function () {
 			var tableProps = {
 				needle: 1,
 				created: new Date(),
-				map: {},
+				map: {}
 			};
 			tables[name] = tableProps;
 			putData('tables', tables);
-			return true;
-		} else {
-			console.log('table exist');
 		}
+		return true;
 	}
 
 	//write in localStorage
 
 	function putData(key, value) {
 		localStorage[key] = JSON.stringify(value);
+		return true;
 	}
 
 	function getData(key) {
