@@ -1,6 +1,6 @@
 /**
 * localStorage Helper
-* 
+*
 * Helper class to create object store in localStorage and do basic create, read, update, delete operations
 * @author Suman Paul
 */
