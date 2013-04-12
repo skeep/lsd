@@ -20,9 +20,9 @@ describe('LocalStorage', function () {
 		expect(editedData.name).toEqual('shreyashi');
 	});
 
-	// it('should delete data', function () {
-	// 	var toBeDeleted = editedData.id;
-	// 	lsd.remove('humans', toBeDeleted);
-	// 	expect(lsd.get('humans', toBeDeleted)).toBeFalsy();
-	// });
+	it('should delete data', function () {
+		var toBeDeleted = editedData.id;
+		lsd.remove('humans', toBeDeleted);
+		expect(lsd.get('humans', toBeDeleted)).toBeFalsy();
+	});
 });
