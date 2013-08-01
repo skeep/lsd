@@ -190,4 +190,4 @@ var lsd = (function () {
 		get: read,
 		remove: remove
 	};
-})();
+}).call(this);
