@@ -1,26 +1,37 @@
 /**
-* localStorage Helper
-*
-* Helper class to create object store in localStorage and do basic create, read, update, delete operations
-* @author Suman Paul
-*/
+ * localStorage Helper
+ * Helper class to create object store in localStorage and do basic create, read, update, delete operations
+ * @returns {{createDataStore: Function, set: Function, get: Function, remove: Function}}
+ * @author Suman Paul
+ */
 var lsd = (function () {
 	'use strict';
 
-	function remove(objectStore, id) {
+    /**
+     *
+     * @param objectStore
+     * @param id
+     */
+    function remove(objectStore, id) {
 		var os = getTable(objectStore);
 		var uid = os.map[id];
+		var collections = getTables();
 		localStorage.removeItem(uid);
 		delete os.map[id];
-		var collections = getTables();
 		collections[objectStore] = os;
 		localStorage.tables = JSON.stringify(collections);
 	}
 
-	function store(objectStore, dataObj) {
+    /**
+     *
+     * @param objectStore
+     * @param dataObj
+     * @returns {*}
+     */
+    function store(objectStore, dataObj) {
 		var id = '';
 		var table = getTable(objectStore);
-		var data = dataObj;
+		var data = {};
 		if (data.hasOwnProperty('id')) {
 			var dataId = data.id;
 			var storedData = read(objectStore, dataId);
@@ -36,10 +47,13 @@ var lsd = (function () {
 		} else {
 			var needle = table.needle;
 			id = randomUUID();
+			data.local = {};
+			data.db = {};
 			//data augmentation
-			data.created = new Date();
-			data.modified = new Date();
-			data.id = needle;
+			data.local.created = new Date();
+			data.local.modified = new Date();
+			data.local.id = needle;
+			data.db = dataObj;
 			//table augmentation
 			table.needle = needle + 1;
 			table.map[needle] = id;
@@ -55,7 +69,13 @@ var lsd = (function () {
 		}
 	}
 
-	function read(objectStore, id) {
+    /**
+     *
+     * @param objectStore
+     * @param id
+     * @returns {*}
+     */
+    function read(objectStore, id) {
 		var os = getTable(objectStore);
 		if (id) {
 			var uid = os.map[id];
@@ -78,17 +98,21 @@ var lsd = (function () {
 		}
 	}
 
-	//Initialize DB
-
-	function initDB() {
+    /**
+     * Initialize DB
+     * @returns {boolean}
+     */
+    function initDB() {
 		if (!getTables()) {
 			localStorage.tables = '{}';
 			return true;
 		}
 	}
 
-	// get all tables
-
+    /**
+     * get all tables
+     * @returns {*}
+     */
 	function getTables() {
 		if (localStorage.tables) {
 			return JSON.parse(localStorage.tables);
@@ -97,8 +121,11 @@ var lsd = (function () {
 		}
 	}
 
-	// get a perticular table
-
+    /**
+     * get a particular table
+     * @param name
+     * @returns {*}
+     */
 	function getTable(name) {
 		var table = getTables()[name];
 		if (table) {
@@ -108,8 +135,12 @@ var lsd = (function () {
 		}
 	}
 
-	// Create new table
-
+    /**
+     * Create new table
+     * @param name
+     * @param schema
+     * @returns {boolean}
+     */
 	function createTable(name, schema) {
 		if (!getTable(name)) {
 			initDB();
@@ -125,19 +156,33 @@ var lsd = (function () {
 		return true;
 	}
 
-	//write in localStorage
 
+    /**
+     * write in localStorage
+     * @param key
+     * @param value
+     * @returns {boolean}
+     */
 	function putData(key, value) {
 		localStorage[key] = JSON.stringify(value);
 		return true;
 	}
 
-	function getData(key) {
+    /**
+     *
+     * @param key
+     * @returns {*}
+     */
+    function getData(key) {
 		return JSON.parse(localStorage[key]);
 	}
 
-	//array exist
-	Array.prototype.exists = function (val) {
+    /**
+     * array exist
+     * @param val
+     * @returns {boolean}
+     */
+    Array.prototype.exists = function (val) {
 		for (var i = 0; i < this.length; i++) {
 			if (this[i] === val) {
 				return true;
